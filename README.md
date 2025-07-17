@@ -1,1 +1,1 @@
-# markdown-table-editor
+# better-markdown-tables
