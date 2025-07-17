@@ -1,13 +1,13 @@
 {
-  "name": "markdown-tables",
-  "displayName": "Markdown Tables",
+  "name": "markdown-table-editor",
+  "displayName": "Markdown Table Editor",
   "description": "Interactive editor for markdown tables with visual editing interface",
   "version": "0.0.1",
   "publisher": "jurajstefanic",
   "icon": "assets/icons/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stefanicjuraj/markdown-tables"
+    "url": "https://github.com/stefanicjuraj/markdown-table-editor"
   },
   "license": "MIT",
   "engines": {
