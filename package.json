@@ -2,7 +2,7 @@
   "name": "better-markdown-tables",
   "displayName": "Better Markdown Tables",
   "description": "interactive editor for markdown tables",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "jurajstefanic",
   "icon": "assets/icons/icon.png",
   "repository": {
@@ -26,6 +26,10 @@
       {
         "command": "markdown-tables.editTable",
         "title": "Markdown Tables: Edit Table"
+      },
+      {
+        "command": "markdown-tables.createTable",
+        "title": "Markdown Tables: Create Table"
       }
     ]
   },
