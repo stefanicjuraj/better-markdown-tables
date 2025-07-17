@@ -1,8 +1,8 @@
 {
   "name": "better-markdown-tables",
   "displayName": "Better Markdown Tables",
-  "description": "Interactive editor for markdown tables with visual editing interface",
-  "version": "0.0.1",
+  "description": "interactive editor for markdown tables",
+  "version": "0.0.2",
   "publisher": "jurajstefanic",
   "icon": "assets/icons/icon.png",
   "repository": {
