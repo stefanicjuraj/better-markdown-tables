@@ -1,0 +1,47 @@
+{
+  "name": "markdown-tables",
+  "displayName": "Markdown Tables",
+  "description": "Interactive editor for markdown tables with visual editing interface",
+  "version": "0.0.1",
+  "publisher": "jurajstefanic",
+  "icon": "assets/icons/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stefanicjuraj/markdown-tables"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:mdx"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "markdown-tables.editTable",
+        "title": "Markdown Tables: Edit Table"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "eslint": "^9.23.0",
+    "typescript": "^5.8.2",
+    "@vscode/vsce": "^2.24.0"
+  }
+}
