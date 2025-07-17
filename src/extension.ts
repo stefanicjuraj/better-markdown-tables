@@ -9,6 +9,9 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("markdown-tables.editTable", (args) => {
       provider.editTable(args);
     }),
+    vscode.commands.registerCommand("markdown-tables.createTable", () => {
+      provider.createTable();
+    }),
     vscode.languages.registerCodeLensProvider(
       ["markdown", "mdx"],
       new MarkdownTableCodeLensProvider()
@@ -125,6 +128,55 @@ class MarkdownTableProvider {
     });
   }
 
+  public createTable() {
+    const activeEditor = vscode.window.activeTextEditor;
+    if (!activeEditor) {
+      vscode.window.showErrorMessage("No active editor found");
+      return;
+    }
+
+    const document = activeEditor.document;
+    if (!["markdown", "mdx"].includes(document.languageId)) {
+      vscode.window.showErrorMessage(
+        "This command only works in Markdown files"
+      );
+      return;
+    }
+
+    const defaultTableData = [
+      ["", "", ""],
+      ["", "", ""],
+    ];
+
+    if (this._panel) {
+      this._panel.dispose();
+    }
+
+    this._panel = vscode.window.createWebviewPanel(
+      "markdownTableEditor",
+      "Create Markdown Table",
+      vscode.ViewColumn.Beside,
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+      }
+    );
+
+    this._panel.webview.html = this.getWebviewContent(defaultTableData);
+
+    this._panel.webview.onDidReceiveMessage((message) => {
+      switch (message.command) {
+        case "save":
+          this.insertNewTable(activeEditor, message.data);
+          this._panel?.dispose();
+          break;
+        case "cancel":
+          this._panel?.dispose();
+          break;
+      }
+    });
+  }
+
   private extractTableText(
     document: vscode.TextDocument,
     startLine: number,
@@ -183,6 +235,37 @@ class MarkdownTableProvider {
     edit.replace(document.uri, range, markdownTable + "\n");
 
     vscode.workspace.applyEdit(edit);
+  }
+
+  private insertNewTable(editor: vscode.TextEditor, tableData: string[][]) {
+    const markdownTable = this.generateMarkdownTable(tableData);
+    const position = editor.selection.active;
+
+    const currentLine = editor.document.lineAt(position.line);
+    const isLineEmpty = currentLine.text.trim() === "";
+
+    let insertText = markdownTable;
+    if (!isLineEmpty) {
+      insertText = "\n\n" + markdownTable + "\n\n";
+    } else {
+      insertText = markdownTable + "\n\n";
+    }
+
+    editor.edit((editBuilder) => {
+      if (isLineEmpty) {
+        editBuilder.replace(
+          new vscode.Range(
+            position.line,
+            0,
+            position.line,
+            currentLine.text.length
+          ),
+          insertText
+        );
+      } else {
+        editBuilder.insert(position, insertText);
+      }
+    });
   }
 
   private generateMarkdownTable(data: string[][]): string {
