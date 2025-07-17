@@ -1,13 +1,13 @@
 {
-  "name": "markdown-table-editor",
-  "displayName": "Markdown Table Editor",
+  "name": "better-markdown-tables",
+  "displayName": "Better Markdown Tables",
   "description": "Interactive editor for markdown tables with visual editing interface",
   "version": "0.0.1",
   "publisher": "jurajstefanic",
   "icon": "assets/icons/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stefanicjuraj/markdown-table-editor"
+    "url": "https://github.com/stefanicjuraj/better-markdown-tables"
   },
   "license": "MIT",
   "engines": {
