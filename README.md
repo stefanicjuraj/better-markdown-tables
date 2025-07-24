@@ -16,7 +16,7 @@ An interactive editor for Markdown tables. The extension handles all the tedious
 
 ### Creating a New Table
 
-1. Open a Markdown (`.m`d) or MDX (`.mdx`) file
+1. Open a Markdown (`.md`) or MDX (`.mdx`) file
 2. Position your cursor where you want to add the table
 3. Command Palette: `Ctrl+Shift+P` → "Markdown Tables: Create Table"
 
