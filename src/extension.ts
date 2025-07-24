@@ -360,10 +360,35 @@ class MarkdownTableProvider {
             font-size: 14px;
             font-weight: 500;
             transition: all 0.2s ease;
+            min-width: auto;
         }
         
         .row-controls button:hover {
             background-color: var(--vscode-button-hoverBackground);
+        }
+        
+        .word-wrap-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 16px;
+            padding: 8px 12px;
+            background-color: var(--vscode-input-background);
+            border-radius: 5px;
+            border: 1px solid var(--vscode-input-border);
+        }
+        
+        .word-wrap-toggle label {
+            font-size: 14px;
+            color: var(--vscode-foreground);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .word-wrap-toggle input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
         }
         
         .table-section {
@@ -382,35 +407,48 @@ class MarkdownTableProvider {
             width: 100%;
             min-width: 500px;
             background-color: var(--vscode-editor-background);
+            table-layout: auto;
         }
         
         th, td {
             border: 1px solid var(--vscode-panel-border);
             text-align: left;
             position: relative;
-            vertical-align: middle;
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
         th {
             padding: 12px 16px;
-        }
-        
-        td {
-            padding: 12px 16px;
-        }
-        
-        th {
             background-color: var(--vscode-editor-background);
             font-weight: 400;
             font-size: 14px;
             border-bottom: 1px solid var(--vscode-panel-border);
             height: auto;
-            max-width: 200px;
+            min-width: 120px;
+            max-width: none;
         }
         
         td {
+            padding: 12px 16px;
             background-color: var(--vscode-editor-background);
             transition: background-color 0.2s ease;
+            min-width: 120px;
+            max-width: none;
+        }
+        
+        .word-wrap-enabled th,
+        .word-wrap-enabled td {
+            max-width: 300px;
+            white-space: normal;
+            word-break: break-word;
+        }
+        
+        .word-wrap-disabled th,
+        .word-wrap-disabled td {
+            white-space: nowrap;
+            overflow: hidden;
         }
         
         tr.selected {
@@ -427,7 +465,7 @@ class MarkdownTableProvider {
             background-color: var(--vscode-list-activeSelectionBackground) !important;
         }
         
-        input {
+        input, textarea {
             width: 100%;
             background: transparent;
             border: none;
@@ -437,12 +475,30 @@ class MarkdownTableProvider {
             padding: 4px;
             border-radius: 3px;
             transition: all 0.2s ease;
+            resize: none;
+            overflow: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         
-        input:focus {
+        input:focus, textarea:focus {
             outline: none;
             background-color: var(--vscode-input-background);
             box-shadow: 0 0 0 2px var(--vscode-focusBorder);
+        }
+        
+        .word-wrap-enabled input,
+        .word-wrap-enabled textarea {
+            white-space: normal;
+            word-break: break-word;
+            min-height: 20px;
+        }
+        
+        .word-wrap-disabled input,
+        .word-wrap-disabled textarea {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .drag-handle {
@@ -569,17 +625,20 @@ class MarkdownTableProvider {
                 gap: 6px;
             }
             
+            .word-wrap-toggle {
+                margin-left: 0;
+            }
+            
             .row-controls button {
-                padding: 8px 16px;
-                font-size: 13px;
-                min-width: 70px;
+                padding: 8px 12px;
+                font-size: 14px;
             }
             
             th, td {
                 padding: 8px 12px;
             }
             
-            input {
+            input, textarea {
                 font-size: 13px;
             }
         }
@@ -594,12 +653,16 @@ class MarkdownTableProvider {
                 <button onclick="removeLastRow()">Remove Row</button>
                 <button onclick="addColumn()">Add Column</button>
                 <button onclick="removeLastColumn()">Remove Column</button>
+                <div class="word-wrap-toggle">
+                    <input type="checkbox" id="wordWrapToggle" checked onchange="toggleWordWrap()">
+                    <label for="wordWrapToggle">Word Wrap</label>
+                </div>
             </div>
         </div>
         
         <div class="table-section">
             <div class="table-container">
-                <table id="editableTable">
+                <table id="editableTable" class="word-wrap-enabled">
                 </table>
             </div>
         </div>
@@ -617,6 +680,80 @@ class MarkdownTableProvider {
         let draggedColumnIndex = -1;
         let selectedRowIndex = -1;
         let selectedColumnIndex = -1;
+        let wordWrapEnabled = true;
+        
+        function toggleWordWrap() {
+            wordWrapEnabled = !wordWrapEnabled;
+            const table = document.getElementById('editableTable');
+            const checkbox = document.getElementById('wordWrapToggle');
+            
+            if (wordWrapEnabled) {
+                table.className = 'word-wrap-enabled';
+                checkbox.checked = true;
+            } else {
+                table.className = 'word-wrap-disabled';
+                checkbox.checked = false;
+            }
+            
+            adjustInputTypes();
+        }
+        
+        function adjustInputTypes() {
+            const table = document.getElementById('editableTable');
+            const inputs = table.querySelectorAll('input, textarea');
+            
+            inputs.forEach(input => {
+                const value = input.value;
+                const cell = input.parentElement;
+                
+                if (wordWrapEnabled && (value.length > 50 || value.includes('\\n'))) {
+                    if (input.tagName === 'INPUT') {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = value;
+                        textarea.style.paddingLeft = input.style.paddingLeft;
+                        textarea.rows = Math.max(1, Math.ceil(value.length / 50));
+                        
+                        const rowIndex = parseInt(cell.parentElement.dataset.rowIndex);
+                        const cellIndex = parseInt(cell.dataset.columnIndex);
+                        
+                        textarea.addEventListener('input', (e) => {
+                            tableData[rowIndex][cellIndex] = e.target.value;
+                            autoResizeTextarea(e.target);
+                        });
+                        
+                        textarea.addEventListener('focus', () => {
+                            clearSelection();
+                        });
+                        
+                        cell.replaceChild(textarea, input);
+                        autoResizeTextarea(textarea);
+                    }
+                } else if (!wordWrapEnabled && input.tagName === 'TEXTAREA') {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'text';
+                    newInput.value = value;
+                    newInput.style.paddingLeft = input.style.paddingLeft;
+                    
+                    const rowIndex = parseInt(cell.parentElement.dataset.rowIndex);
+                    const cellIndex = parseInt(cell.dataset.columnIndex);
+                    
+                    newInput.addEventListener('input', (e) => {
+                        tableData[rowIndex][cellIndex] = e.target.value;
+                    });
+                    
+                    newInput.addEventListener('focus', () => {
+                        clearSelection();
+                    });
+                    
+                    cell.replaceChild(newInput, input);
+                }
+            });
+        }
+        
+        function autoResizeTextarea(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.max(20, textarea.scrollHeight) + 'px';
+        }
         
         function clearSelection() {
             selectedRowIndex = -1;
@@ -676,7 +813,7 @@ class MarkdownTableProvider {
         }
         
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !e.target.matches('input')) {
+            if (e.key === 'Backspace' && !e.target.matches('input') && !e.target.matches('textarea')) {
                 e.preventDefault();
                 if (selectedRowIndex !== -1) {
                     deleteSelectedRow();
@@ -738,7 +875,7 @@ class MarkdownTableProvider {
                         cellElement.draggable = true;
                         
                         cellElement.addEventListener('click', (e) => {
-                            if (!e.target.matches('input')) {
+                            if (!e.target.matches('input') && !e.target.matches('textarea')) {
                                 e.stopPropagation();
                                 selectColumn(cellIndex);
                             }
@@ -792,19 +929,34 @@ class MarkdownTableProvider {
                         cellElement.appendChild(rowDragHandle);
                     }
                     
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = cell;
-                    input.style.paddingLeft = cellIndex === 0 ? '20px' : '0';
-                    input.addEventListener('input', (e) => {
+                    const shouldUseTextarea = wordWrapEnabled && (cell.length > 50 || cell.includes('\\n'));
+                    const inputElement = shouldUseTextarea ? document.createElement('textarea') : document.createElement('input');
+                    
+                    if (!shouldUseTextarea) {
+                        inputElement.type = 'text';
+                    } else {
+                        inputElement.rows = Math.max(1, Math.ceil(cell.length / 50));
+                    }
+                    
+                    inputElement.value = cell;
+                    inputElement.style.paddingLeft = cellIndex === 0 ? '20px' : '0';
+                    
+                    inputElement.addEventListener('input', (e) => {
                         tableData[rowIndex][cellIndex] = e.target.value;
+                        if (shouldUseTextarea) {
+                            autoResizeTextarea(e.target);
+                        }
                     });
                     
-                    input.addEventListener('focus', () => {
+                    inputElement.addEventListener('focus', () => {
                         clearSelection();
                     });
                     
-                    cellElement.appendChild(input);
+                    if (shouldUseTextarea) {
+                        setTimeout(() => autoResizeTextarea(inputElement), 0);
+                    }
+                    
+                    cellElement.appendChild(inputElement);
                     tr.appendChild(cellElement);
                 });
                 
