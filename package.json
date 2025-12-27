@@ -2,7 +2,7 @@
   "name": "better-markdown-tables",
   "displayName": "Better Markdown Tables",
   "description": "interactive editor for markdown tables",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "jurajstefanic",
   "icon": "assets/icons/icon.png",
   "repository": {
@@ -35,8 +35,8 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "compile": "./node_modules/.bin/tsc -p ./",
+    "watch": "./node_modules/.bin/tsc -watch -p ./",
     "lint": "eslint src"
   },
   "devDependencies": {
