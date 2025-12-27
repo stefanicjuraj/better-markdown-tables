@@ -221,17 +221,48 @@ class MarkdownTableProvider {
 
     const headerRow = tableData[0];
     const dataRows = tableData.slice(1);
+    const numColumns = headerRow.length;
 
-    const sortedDataRows = [...dataRows].sort((a, b) => {
-      const aValue = (a[0] || "").trim().toLowerCase();
-      const bValue = (b[0] || "").trim().toLowerCase();
-      
-      if (ascending) {
-        return aValue.localeCompare(bValue);
-      } else {
-        return bValue.localeCompare(aValue);
+    const columns: string[][] = [];
+    for (let colIndex = 0; colIndex < numColumns; colIndex++) {
+      const column: string[] = [];
+      for (const row of dataRows) {
+        if (row && row.length > colIndex) {
+          const cell = row[colIndex] || "";
+          if (cell.trim() !== "") {
+            column.push(cell);
+          }
+        }
       }
-    });
+      
+      column.sort((a, b) => {
+        const aValue = (a || "").trim().toLowerCase();
+        const bValue = (b || "").trim().toLowerCase();
+        
+        if (ascending) {
+          return aValue.localeCompare(bValue);
+        } else {
+          return bValue.localeCompare(aValue);
+        }
+      });
+      
+      columns.push(column);
+    }
+
+    const maxColumnLength = Math.max(...columns.map(col => col.length), 0);
+
+    const sortedDataRows: string[][] = [];
+    for (let rowIndex = 0; rowIndex < maxColumnLength; rowIndex++) {
+      const row: string[] = [];
+      for (let colIndex = 0; colIndex < numColumns; colIndex++) {
+        if (rowIndex < columns[colIndex].length) {
+          row.push(columns[colIndex][rowIndex]);
+        } else {
+          row.push("");
+        }
+      }
+      sortedDataRows.push(row);
+    }
 
     const sortedTableData = [headerRow, ...sortedDataRows];
     this.saveTable(document, startLine, endLine, sortedTableData);
@@ -271,7 +302,12 @@ class MarkdownTableProvider {
         });
 
       if (cells.length > 0) {
-        rows.push(cells);
+        const hasNonEmptyCell = cells.some((cell) => cell.trim() !== "");
+        if (rows.length === 0) {
+          rows.push(cells);
+        } else if (hasNonEmptyCell) {
+          rows.push(cells);
+        }
       }
     }
 
