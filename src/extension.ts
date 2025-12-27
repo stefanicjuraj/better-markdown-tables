@@ -12,6 +12,12 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("markdown-tables.createTable", () => {
       provider.createTable();
     }),
+    vscode.commands.registerCommand("markdown-tables.sortTableAsc", (args) => {
+      provider.sortTable(args, true);
+    }),
+    vscode.commands.registerCommand("markdown-tables.sortTableDesc", (args) => {
+      provider.sortTable(args, false);
+    }),
     vscode.languages.registerCodeLensProvider(
       ["markdown", "mdx"],
       new MarkdownTableCodeLensProvider()
@@ -39,7 +45,8 @@ class MarkdownTableCodeLensProvider implements vscode.CodeLensProvider {
 
         if (tableStart !== -1 && tableEnd !== -1) {
           const range = new vscode.Range(tableStart, 0, tableStart, 0);
-          const command: vscode.Command = {
+          
+          const editCommand: vscode.Command = {
             title: "Edit",
             command: "markdown-tables.editTable",
             arguments: [
@@ -50,8 +57,33 @@ class MarkdownTableCodeLensProvider implements vscode.CodeLensProvider {
               },
             ],
           };
+          codeLenses.push(new vscode.CodeLens(range, editCommand));
 
-          codeLenses.push(new vscode.CodeLens(range, command));
+          const sortAscCommand: vscode.Command = {
+            title: "Sort (A-Z)",
+            command: "markdown-tables.sortTableAsc",
+            arguments: [
+              {
+                document: document,
+                startLine: tableStart,
+                endLine: tableEnd,
+              },
+            ],
+          };
+          codeLenses.push(new vscode.CodeLens(range, sortAscCommand));
+
+          const sortDescCommand: vscode.Command = {
+            title: "Sort (Z-A)",
+            command: "markdown-tables.sortTableDesc",
+            arguments: [
+              {
+                document: document,
+                startLine: tableStart,
+                endLine: tableEnd,
+              },
+            ],
+          };
+          codeLenses.push(new vscode.CodeLens(range, sortDescCommand));
 
           i = tableEnd;
         }
@@ -175,6 +207,34 @@ class MarkdownTableProvider {
           break;
       }
     });
+  }
+
+  public sortTable(args: any, ascending: boolean) {
+    const { document, startLine, endLine } = args;
+    const tableText = this.extractTableText(document, startLine, endLine);
+    const tableData = this.parseMarkdownTable(tableText);
+
+    if (tableData.length <= 1) {
+      vscode.window.showInformationMessage("Table has no data rows to sort");
+      return;
+    }
+
+    const headerRow = tableData[0];
+    const dataRows = tableData.slice(1);
+
+    const sortedDataRows = [...dataRows].sort((a, b) => {
+      const aValue = (a[0] || "").trim().toLowerCase();
+      const bValue = (b[0] || "").trim().toLowerCase();
+      
+      if (ascending) {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    });
+
+    const sortedTableData = [headerRow, ...sortedDataRows];
+    this.saveTable(document, startLine, endLine, sortedTableData);
   }
 
   private extractTableText(
